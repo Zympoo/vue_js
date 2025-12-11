@@ -53,7 +53,6 @@ function handleDeleteTask() {
     <div class="mt-3 flex items-center justify-between gap-2">
       <div class="flex gap-1">
         <button
-            120
             v-if="!isFirstColumn"
             type="button"
             class="rounded-md bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600"
@@ -70,7 +69,7 @@ function handleDeleteTask() {
       </div>
       <button
           type="button"
-          class="rounded-md bg-red-600 px-2 py-1 text-[11px] font-medium textslate-50 hover:bg-red-500"
+          class="rounded-md bg-red-600 px-2 py-1 text-[11px] font-medium text-slate-50 hover:bg-red-500"
           @click="handleDeleteTask">
         Verwijderen
       </button>

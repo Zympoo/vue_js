@@ -15,6 +15,7 @@ onMounted(async () => {
       data: { session },
       error,
     } = await supabase.auth.getSession();
+
     if (error) {
       connectionStatus.value = `Verbinding ok, maar auth error: ${error.message}`;
     } else {

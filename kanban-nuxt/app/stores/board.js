@@ -41,7 +41,6 @@ export const useBoardStore = defineStore("board", {
                 const { data, error } = await supabase
                     .from("tasks")
                     .select("*")
-                    .order("created_at", { ascending: true });
 
                 if (error) throw error;
 
@@ -160,9 +159,13 @@ export const useBoardStore = defineStore("board", {
             const fromColumnIndex = this.columns.findIndex((col) => col.id === fromColumnId);
 
             if (fromColumnIndex === -1) return;
+
             const toColumnIndex = fromColumnIndex - 1;
+
             if (toColumnIndex < 0) return;
+
             const toColumn = this.columns[toColumnIndex];
+
             this.error = null;
             try {
                 const { error } = await supabase
