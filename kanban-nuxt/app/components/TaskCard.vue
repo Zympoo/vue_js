@@ -1,57 +1,43 @@
 <script setup>
 const props = defineProps({
-  id: {
-    type: Number,
-    required: true
-  },
-  columnId: {
-    type: String,
-    required: true
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: ""
-  },
-  isFirstColumn: {
-    type: Boolean,
-    default: false
-  },
-  isLastColumn: {
-    type: Boolean,
-    default: false
-  }
+  id: { type: Number, required: true },
+  columnId: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  isFirstColumn: { type: Boolean, default: false },
+  isLastColumn: { type: Boolean, default: false }
 })
-const emit = defineEmits(["move-task", "move-task-back", "delete-task"])
+const emit = defineEmits(['move-task', 'move-task-back', 'delete-task'])
 
 function handleMoveToNextColumn() {
-  if (props.isLastColumn) {
-    return
-  }
-  emit("move-task", {
+  if (props.isLastColumn) return
+
+  emit('move-task', {
     taskId: props.id,
     fromColumnId: props.columnId
   })
 }
 
 function handleMoveToPreviousColumn() {
-  if (props.isFirstColumn) {
-    return
-  }
-  emit("move-task-back", {
+  if (props.isFirstColumn) return
+
+  emit('move-task-back', {
     taskId: props.id,
     fromColumnId: props.columnId
   })
 }
 
 function handleDeleteTask() {
-  emit("delete-task", {
-    taskId: props.id,
-    fromColumnId: props.columnId
-  })
+  const confirmed = confirm(
+      `Weet je zeker dat je "${props.title}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.`
+  )
+
+  if (confirmed) {
+    emit('delete-task', {
+      taskId: props.id,
+      fromColumnId: props.columnId
+    })
+  }
 }
 </script>
 <template>
@@ -61,34 +47,31 @@ function handleDeleteTask() {
     </h3>
     <p
         v-if="description"
-        class="mt-1 text-[11px] leading-relaxed text-slate-200"
-    >
+        class="mt-1 text-[11px] leading-relaxed text-slate200">
       {{ description }}
     </p>
     <div class="mt-3 flex items-center justify-between gap-2">
       <div class="flex gap-1">
         <button
+            120
             v-if="!isFirstColumn"
-            class="rounded-md bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600"
             type="button"
-            @click="handleMoveToPreviousColumn"
-        >
+            class="rounded-md bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600"
+            @click="handleMoveToPreviousColumn">
           Vorige
         </button>
         <button
             v-if="!isLastColumn"
-            class="rounded-md bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600"
             type="button"
-            @click="handleMoveToNextColumn"
-        >
+            class="rounded-md bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600"
+            @click="handleMoveToNextColumn">
           Volgende
         </button>
       </div>
       <button
-          class="rounded-md bg-red-600 px-2 py-1 text-[11px] font-medium text-slate-50 hover:bg-red-500"
           type="button"
-          @click="handleDeleteTask"
-      >
+          class="rounded-md bg-red-600 px-2 py-1 text-[11px] font-medium textslate-50 hover:bg-red-500"
+          @click="handleDeleteTask">
         Verwijderen
       </button>
     </div>

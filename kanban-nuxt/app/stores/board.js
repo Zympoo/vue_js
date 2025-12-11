@@ -1,140 +1,251 @@
-import { defineStore } from 'pinia'
+// app/stores/board.js
+import { defineStore } from "pinia";
+import { useSupabase } from "~/composables/useSupabase";
 function createInitialColumns() {
     return [
         {
-            id: 'todo',
-            title: 'To do',
-            tasks: [
-                {
-                    id: 1,
-                    title: 'Nieuwe cursusstructuur uitwerken',
-                    description: 'Modules herzien en oefeningen toevoegen.'
-                },
-                {
-                    id: 2,
-                    title: 'Design voor dashboard maken',
-                    description: 'Wireframes uitwerken en kleurenpalet bepalen.'
-                }
-            ]
+            id: "todo",
+            title: "To do",
+            tasks: []
         },
         {
-            id: 'doing',
-            title: 'Doing',
-            tasks: [
-                {
-                    id: 3,
-                    title: 'API koppeling testen',
-                    description: 'Foutafhandeling en timeouts controleren.'
-                }
-            ]
+            id: "doing",
+            title: "Doing",
+            tasks: []
         },
         {
-            id: 'done',
-            title: 'Done',
-            tasks: [
-                {
-                    id: 4,
-                    title: 'Vite project opgezet',
-                    description: 'Basisconfiguratie met Vue en Tailwind.'
-                },
-                {
-                    id: 5,
-                    title: 'Component structuur bepaald',
-                    description: 'BoardColumn en TaskCard gedefinieerd.'
-                },
-                {
-                    id: 6,
-                    title: 'Tailwind integratie getest',
-                    description: 'Layout gecontroleerd in Nuxt.'
-                }
-            ]
+            id: "done",
+            title: "Done",
+            tasks: []
         }
-    ]
+    ];
 }
-export const useBoardStore = defineStore('board', {
+export const useBoardStore = defineStore("board", {
     state: () => ({
         columns: createInitialColumns(),
-        nextTaskId: 7
+        loading: false,
+        error: null
     }),
     actions: {
-        resetBoard() {
-            this.columns = createInitialColumns()
-            this.nextTaskId = 7
+        async fetchTasks() {
+            const supabase = useSupabase();
+
+            if (!supabase) {
+                this.error = "Supabase client niet beschikbaar";
+                return;
+            }
+
+            this.loading = true;
+            this.error = null;
+            try {
+                const { data, error } = await supabase
+                    .from("tasks")
+                    .select("*")
+                    .order("created_at", { ascending: true });
+
+                if (error) throw error;
+
+                this.columns = createInitialColumns();
+                if (data) {
+                    data.forEach((task) => {
+                        const column = this.columns.find((col) => col.id ===
+                            task.column_id);
+                        if (column) {
+                            column.tasks.push({
+                                id: task.id,
+                                title: task.title,
+                                description: task.description || ""
+                            });
+                        }
+                    });
+                }
+            } catch (err) {
+                this.error = err.message;
+                console.error("Fout bij ophalen taken:", err);
+            } finally {
+                this.loading = false;
+            }
         },
-        addTaskToColumn(payload) {
-            const { columnId, title, description } = payload
-            const column = this.columns.find(col => col.id === columnId)
-            if (!column) {
-                return
+        async addTaskToColumn(payload) {
+            const { columnId, title, description } = payload;
+            const supabase = useSupabase();
+
+            if (!supabase) {
+                this.error = "Supabase client niet beschikbaar";
+                return;
             }
-            column.tasks.push({
-                id: this.nextTaskId++,
-                title,
-                description
-            })
+
+            this.error = null;
+
+            try {
+                const { data, error } = await supabase
+                    .from("tasks")
+                    .insert({
+                        title,
+                        description: description || "",
+                        column_id: columnId
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                const column = this.columns.find((col) => col.id === columnId);
+                if (column && data) {
+                    column.tasks.push({
+                        id: data.id,
+                        title: data.title,
+                        description: data.description || ""
+                    });
+                }
+            } catch (err) {
+                this.error = err.message;
+                console.error("Fout bij toevoegen taak:", err);
+                throw err;
+            }
         },
-        moveTask(payload) {
-            const { taskId, fromColumnId } = payload
+        async moveTask(payload) {
+            const { taskId, fromColumnId } = payload;
+            const supabase = useSupabase();
 
-            const fromColumnIndex = this.columns.findIndex(col => col.id ===
-                fromColumnId)
-            if (fromColumnIndex === -1) {
-                return
+            if (!supabase) {
+                this.error = "Supabase client niet beschikbaar";
+                return;
             }
 
-            const fromColumn = this.columns[fromColumnIndex]
-            const taskIndex = fromColumn.tasks.findIndex(task => task.id === taskId)
-            if (taskIndex === -1) {
-                return
-            }
+            const fromColumnIndex = this.columns.findIndex(
+                (col) => col.id === fromColumnId
+            );
 
-            const task = fromColumn.tasks.splice(taskIndex, 1)[0]
-            const toColumnIndex = fromColumnIndex + 1
-            if (toColumnIndex >= this.columns.length) {
-            // kan niet verder, zet taak terug
-                fromColumn.tasks.splice(taskIndex, 0, task)
-                return
-            }
+            if (fromColumnIndex === -1) return;
 
-            const toColumn = this.columns[toColumnIndex]
-            toColumn.tasks.push(task)
+            const toColumnIndex = fromColumnIndex + 1;
+            if (toColumnIndex >= this.columns.length) return;
+            const toColumn = this.columns[toColumnIndex];
+
+            this.error = null;
+
+            try {
+                const { error } = await supabase
+                    .from("tasks")
+                    .update({ column_id: toColumn.id })
+                    .eq("id", taskId);
+
+                if (error) throw error;
+
+                const fromColumn = this.columns[fromColumnIndex];
+                const taskIndex = fromColumn.tasks.findIndex(
+                    (task) => task.id === taskId
+                );
+
+                if (taskIndex !== -1) {
+                    const task = fromColumn.tasks.splice(taskIndex, 1)[0];
+                    toColumn.tasks.push(task);
+                }
+            } catch (err) {
+                this.error = err.message;
+                console.error("Fout bij verplaatsen taak:", err);
+                throw err;
+            }
         },
-        moveTaskBack(payload) {
-            const { taskId, fromColumnId } = payload
+        async moveTaskBack(payload) {
+            const { taskId, fromColumnId } = payload;
+            const supabase = useSupabase();
 
-            const fromColumnIndex = this.columns.findIndex(col => col.id === fromColumnId)
-            if (fromColumnIndex === -1) {
-                return
+            if (!supabase) {
+                this.error = "Supabase client niet beschikbaar";
+                return;
             }
 
-            const fromColumn = this.columns[fromColumnIndex]
-            const taskIndex = fromColumn.tasks.findIndex(task => task.id ===
-                taskId)
-            if (taskIndex === -1) {
-                return
-            }
+            const fromColumnIndex = this.columns.findIndex((col) => col.id === fromColumnId);
 
-            const task = fromColumn.tasks.splice(taskIndex, 1)[0]
-            const toColumnIndex = fromColumnIndex - 1
-            if (toColumnIndex < 0) {
-                fromColumn.tasks.splice(taskIndex, 0, task)
-                return
-            }
+            if (fromColumnIndex === -1) return;
+            const toColumnIndex = fromColumnIndex - 1;
+            if (toColumnIndex < 0) return;
+            const toColumn = this.columns[toColumnIndex];
+            this.error = null;
+            try {
+                const { error } = await supabase
+                    .from("tasks")
+                    .update({ column_id: toColumn.id })
+                    .eq("id", taskId);
+                if (error) throw error;
 
-            const toColumn = this.columns[toColumnIndex]
-            toColumn.tasks.push(task)
+                const fromColumn = this.columns[fromColumnIndex];
+                const taskIndex = fromColumn.tasks.findIndex(
+                    (task) => task.id === taskId
+                );
+
+                if (taskIndex !== -1) {
+                    const task = fromColumn.tasks.splice(taskIndex, 1)[0];
+                    toColumn.tasks.push(task);
+                }
+            } catch (err) {
+                this.error = err.message;
+                console.error("Fout bij verplaatsen taak:", err);
+                throw err;
+            }
         },
-        deleteTask(payload) {
-            const { taskId, fromColumnId } = payload
-            const column = this.columns.find(col => col.id === fromColumnId)
-            if (!column) {
-                return
+        async deleteTask(payload) {
+            const { taskId, fromColumnId } = payload;
+            const supabase = useSupabase();
+
+            if (!supabase) {
+                this.error = "Supabase client niet beschikbaar";
+                return;
             }
-            const taskIndex = column.tasks.findIndex(task => task.id === taskId)
-            if (taskIndex === -1) {
-                return
+
+            this.error = null;
+            try {
+                const { error } = await supabase
+                    .from("tasks")
+                    .delete()
+                    .eq("id", taskId);
+
+                if (error) throw error;
+
+                const column = this.columns.find((col) => col.id === fromColumnId);
+                if (column) {
+                    const taskIndex = column.tasks.findIndex(
+                        (task) => task.id === taskId
+                    );
+
+                    if (taskIndex !== -1) {
+                        column.tasks.splice(taskIndex, 1);
+                    }
+                }
+            } catch (err) {
+                this.error = err.message;
+                console.error("Fout bij verwijderen taak:", err);
+                throw err;
             }
-            column.tasks.splice(taskIndex, 1)
+        },
+        async resetBoard() {
+            const supabase = useSupabase();
+
+            if (!supabase) {
+                this.error = "Supabase client niet beschikbaar";
+                return;
+            }
+
+            this.loading = true;
+            this.error = null;
+            try {
+                const { error } = await supabase
+                    .from("tasks")
+                    .delete()
+                    .neq("id", 0);
+
+                if (error) throw error;
+
+                this.columns = createInitialColumns();
+            } catch (err) {
+                this.error = err.message;
+                console.error("Fout bij resetten board:", err);
+                throw err;
+            } finally {
+                this.loading = false;
+            }
         }
     }
 })

@@ -1,10 +1,15 @@
+<!-- app/pages/board.vue -->
 <script setup>
 import { storeToRefs } from 'pinia'
+import { onMounted } from 'vue'
 import BoardColumn from '~/components/BoardColumn.vue'
 import TaskCard from '~/components/TaskCard.vue'
 import { useBoardStore } from '~/stores/board'
 const boardStore = useBoardStore()
-const { columns } = storeToRefs(boardStore)
+const { columns, loading, error } = storeToRefs(boardStore)
+onMounted(() => {
+  boardStore.fetchTasks()
+})
 </script>
 <template>
   <div class="space-y-6">
@@ -14,22 +19,29 @@ const { columns } = storeToRefs(boardStore)
           Kanban board
         </h1>
         <p class="text-sm text-slate-200 max-w-2xl">
-          Dit board gebruikt een Pinia store als centrale bron van waarheid.
-          Je kunt taken toevoegen,
+          Dit board gebruikt Supabase als database. Je kunt taken toevoegen,
           verplaatsen, verwijderen en het board terugzetten naar de
           oorspronkelijke starttoestand.
+        </p>
+        <p v-if="error" class="text-sm text-red-400">
+          Fout: {{ error }}
         </p>
       </div>
       <button
           type="button"
-          class="inline-flex items-center justify-center rounded-md border border-slate-600 bg-slate-800
-                 px-3 py-1.5 text-xs font-semibold text-slate100 hover:bg-slate-700 hover:border-slate-500"
+          class="inline-flex items-center justify-center rounded-md border
+                 border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate100 hover:bg-slate-700
+                 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="boardStore.resetBoard"
+          :disabled="loading"
       >
-        Board resetten
+        {{ loading ? 'Laden...' : 'Board resetten' }}
       </button>
     </header>
-    <section class="flex gap-6 overflow-x-auto pb-4">
+    <div v-if="loading" class="text-center text-slate-400 py-8">
+      Taken laden...
+    </div>
+    <section v-else class="flex gap-6 overflow-x-auto pb-4">
       <BoardColumn
           v-for="(column, columnIndex) in columns"
           :key="column.id"
