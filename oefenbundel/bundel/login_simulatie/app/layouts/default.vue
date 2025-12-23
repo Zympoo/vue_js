@@ -1,14 +1,7 @@
 <script setup>
 import { useUserStore } from '~/stores/userStore'
-import { useRouter } from '#app'
 
 const store = useUserStore()
-const router = useRouter()
-
-const handleLogout = () => {
-  store.logout()
-  router.push('/login')
-}
 </script>
 
 <template>
@@ -20,21 +13,12 @@ const handleLogout = () => {
           <NuxtLink to="/" class="hover:text-slate-300">Home</NuxtLink>
           <NuxtLink to="/dashboard" class="hover:text-slate-300">Dashboard</NuxtLink>
         </div>
-        <div class="flex gap-4 items-center">
-          <span>Welkom, {{ store.user }}</span>
-          <button
-            @click="handleLogout"
-            class="bg-red-600 px-3 py-1 rounded hover:bg-red-700"
-          >
-            Logout
-          </button>
-        </div>
       </nav>
     </header>
 
     <!-- Page content -->
     <main class="flex-1 container mx-auto px-4 py-8">
-      <NuxtPage />
+      <slot />
     </main>
 
     <!-- Footer altijd zichtbaar -->
