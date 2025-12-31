@@ -29,8 +29,9 @@
       </div>
 
       <div class="ml-auto">
-        <NuxtLink to="/settings" class="inline-flex transition-transform duration-500 hover:rotate-180"
-          active-class="text-amber-400 font-semibold rotate-180">
+        <NuxtLink to="/settings"
+          class="inline-flex transition duration-500 transform-colors hover:rotate-180 hover:text-amber-400 text-gray-800"
+          active-class="!text-amber-400 font-semibold rotate-180">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round"
