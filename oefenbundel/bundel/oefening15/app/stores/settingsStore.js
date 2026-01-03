@@ -1,8 +1,6 @@
 import { defineStore } from "pinia";
 import { useNotificationsStore } from "~/stores/notificationStore";
 
-const notificationsStore = useNotificationsStore()
-
 export const useSettingsStore = defineStore('settings', {
     state: () => ({
         username: "",
@@ -13,7 +11,9 @@ export const useSettingsStore = defineStore('settings', {
     }),
     actions: {
         submitChanges(username, email, text_size, emailnotifications, pushnotifications) {
-            if(!username || !email){
+            const notificationsStore = useNotificationsStore()
+
+            if (!username || !email) {
                 notificationsStore.addNotification('Vul alstublieft alle verplichte velden in.')
                 return
             }

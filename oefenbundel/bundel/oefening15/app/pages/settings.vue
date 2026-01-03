@@ -1,11 +1,11 @@
 <script setup>
-useHead({
-    title: "Oefening 'Instellingenpagina' | Nuxt Starter"
-})
-
+import { ref } from 'vue'
 import { useSettingsStore } from '~/stores/settingsStore'
 import Notifications from '~/components/Notifications.vue'
-import { ref } from 'vue'
+
+useHead({
+  title: "Oefening 'Instellingenpagina' | Nuxt Starter"
+})
 
 const settingsStore = useSettingsStore()
 
@@ -14,7 +14,6 @@ const email = ref("")
 const text_size = ref("small")
 const emailnotifications = ref(false)
 const pushnotifications = ref(false)
-
 </script>
 <template>
     <div class="max-w-2xl mx-auto p-6 space-y-8 rounded bg-gray-50">
